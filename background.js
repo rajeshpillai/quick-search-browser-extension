@@ -9,11 +9,10 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "quickSearch" && info.selectionText) {
     const query = encodeURIComponent(info.selectionText);
-    const searchUrl = `https://www.google.com/search?q=${query}`;
 
-    chrome.storage.local.set({ searchUrl }, () => {
-      chrome.action.openPopup();  // Opens the popup defined in popup.html
+    // Store the search query in local storage for the popup to access
+    chrome.storage.local.set({ searchUrl: query }, () => {
+      chrome.action.openPopup();  // Open the popup defined in popup.html
     });
   }
 });
-
