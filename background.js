@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-let modalWindowId = null; // Track the modal window ID
+let modalWindows = []; // Array to track multiple modal windows
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "quickSearch" && info.selectionText) {
@@ -24,7 +24,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       const top = Math.round(screenHeight / 2 - popupHeight / 2);
       const left = Math.round(screenWidth / 2 - popupWidth / 2);
 
-      // Create the popup window and store its ID
+      // Create the popup window and store its ID in the array
       chrome.windows.create({
         url: searchUrl,
         type: "popup",
@@ -34,10 +34,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         left: left,
         focused: true
       }, (createdWindow) => {
-        modalWindowId = createdWindow.id;
-        
-        // Keep focusing the modal window until it's closed
-        monitorWindowFocus(modalWindowId);
+        modalWindows.push(createdWindow.id); // Add the window ID to the array
+        monitorWindowFocus(createdWindow.id); // Monitor focus for this window
       });
     });
   }
@@ -47,16 +45,21 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 function monitorWindowFocus(modalId) {
   // Listen for window focus changes
   chrome.windows.onFocusChanged.addListener((windowId) => {
-    if (windowId !== modalId && windowId !== chrome.windows.WINDOW_ID_NONE) {
-      // If focus shifts away from the modal, refocus the modal
-      chrome.windows.update(modalId, { focused: true });
+    // If focus shifts away from the modal windows, refocus the correct one
+    if (!modalWindows.includes(windowId) && windowId !== chrome.windows.WINDOW_ID_NONE) {
+      // Refocus the last opened modal window if any
+      if (modalWindows.length > 0) {
+        const lastModalId = modalWindows[modalWindows.length - 1];
+        chrome.windows.update(lastModalId, { focused: true });
+      }
     }
   });
 
-  // Listen for window close event
+  // Listen for window close event and remove it from the array
   chrome.windows.onRemoved.addListener((windowId) => {
-    if (windowId === modalId) {
-      modalWindowId = null;  // Reset the modal window ID when it's closed
+    const index = modalWindows.indexOf(windowId);
+    if (index !== -1) {
+      modalWindows.splice(index, 1); // Remove the closed window ID from the array
     }
   });
 }
