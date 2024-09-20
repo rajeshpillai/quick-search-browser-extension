@@ -45,12 +45,29 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 function monitorWindowFocus(modalId) {
   // Listen for window focus changes
   chrome.windows.onFocusChanged.addListener((windowId) => {
-    // If focus shifts away from the modal windows, refocus the correct one
-    if (!modalWindows.includes(windowId) && windowId !== chrome.windows.WINDOW_ID_NONE) {
-      // Refocus the last opened modal window if any
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      return; // No window is focused
+    }
+
+    // Check if focus has shifted away from the modal windows
+    if (!modalWindows.includes(windowId)) {
+      // If focus is not on a modal window, focus the last opened modal window
       if (modalWindows.length > 0) {
         const lastModalId = modalWindows[modalWindows.length - 1];
-        chrome.windows.update(lastModalId, { focused: true });
+
+        // Check if the window still exists before refocusing
+        chrome.windows.get(lastModalId, {}, (window) => {
+          if (chrome.runtime.lastError) {
+            // Window does not exist (likely closed), remove from array
+            const index = modalWindows.indexOf(lastModalId);
+            if (index !== -1) {
+              modalWindows.splice(index, 1);
+            }
+          } else {
+            // Refocus the window if it still exists
+            chrome.windows.update(lastModalId, { focused: true });
+          }
+        });
       }
     }
   });
