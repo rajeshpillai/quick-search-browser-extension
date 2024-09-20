@@ -6,8 +6,6 @@ This is a Chrome extension that allows users to quickly search selected text on 
 
 - Right-click to search selected text.
 - Display search results in a popup window.
-- Allows users to input their own Google API key and Search Engine ID (CX).
-- Credentials are stored securely in the user's browser local storage.
 
 ## Installation
 
